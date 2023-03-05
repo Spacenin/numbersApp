@@ -18,16 +18,39 @@ with open("secrets.json", "r") as file:
     sqlpassword = creds["password"]
     sqldatabase = creds["database"]
 
-print(sqlhost)
-print(sqluser)
-print(sqlpassword)
-print(sqldatabase)
-
 #Connect to db
 mydb = mysql.connector.connect(host=sqlhost, user=sqluser, passwd=sqlpassword, database=sqldatabase)
 
 mycursor = mydb.cursor()
 
+#Subscribe to a specific app, adding it to the mysql db
+def sub(number, app):
+    #Check what they already are in
+    selectQuery = "SELECT apps FROM numbers WHERE number=\'" + number + "\';"
+    
+    #Get results
+    mycursor.execute(selectQuery)
+    results = mycursor.fetchall()
+    
+    #If not already in the database, insert
+    if not results:
+        insertQuery = "INSERT INTO numbers (number, apps) VALUES (\"" + \
+                number + "\", " + str(app) + ");"
+        
+        mycursor.execute(insertQuery)
+        dbcursor.commit()
+    #Otherwise, update record
+    else:
+        #Check if already subscribed
+        if app & results[0][0] == 0b000:
+            updateQuery = "UPDATE numbers SET apps = " + str(results[0][0] + app) + \
+                " WHERE number = \"" + number + "\";"
+            mycursor.execute(updateQuery)
+            mydb.commit()
+        #Otherwise, print nothing done
+        else:
+            print(number + " is already subscribed to service " + str(app))
+    
 #Flask app
 app = Flask(__name__)
 
@@ -43,7 +66,6 @@ def sms_reply():
     #Get the phone number of sender
     sender = request.values.get('From', None)
     sender = sender.replace("+1", "")
-    print(sender)
 
     #If subscribe message
     if re.search("subscribe", body, flags=re.IGNORECASE) != None:
@@ -51,6 +73,15 @@ def sms_reply():
                     "1. \'bible\' - send daily Bible verses\n" + \
                     "2. \'recipe\' - send daily recipes from a selection of websites\n" + \
                     "3. \'weather\' - send daily weather updates")
+    #If they want to sub to bibleApp
+    elif re.search("bible", body, flags=re.IGNORECASE) != None:
+        sub(sender, 0b001)
+    #If they want to sub to recipeApp
+    elif re.search("recipe", body, flags=re.IGNORECASE) != None:
+        sub(sender, 0b010)
+    #If they want to sub to weather
+    elif re.search("weather", body, flags=re.IGNORECASE) != None:
+        sub(sender, 0b100)
     #If help message
     elif re.search("help me", body, flags=re.IGNORECASE) != None:
         resp.message("These are the available messages to send:\n" + \
@@ -60,7 +91,7 @@ def sms_reply():
     #Otherwise, give them an error msg
     else:
         resp.message("Invalid response! You may text \'help me\' to see available responses.")
-
+    
     #Send back response
     return str(resp)
 
@@ -68,8 +99,3 @@ def sms_reply():
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
     mydb.close()
-
-#Subscribe to a specific app, adding it to the mysql db
-def sub(number):
-    #Setup query
-    query = ""
