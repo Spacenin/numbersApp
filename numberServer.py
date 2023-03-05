@@ -1,7 +1,32 @@
 from flask import Flask, request, redirect
 from twilio.twiml.messaging_response import MessagingResponse
 import re
-import mysql.connector as mysql
+import mysql.connector
+import json
+
+#Creds to use for mysql connection
+sqlhost = ""
+sqluser = ""
+sqlpassword = ""
+sqldatabase = ""
+
+#Get mysql creds
+with open("secrets.json", "r") as file:
+    creds = json.load(file)
+    sqlhost = creds["host"]
+    sqluser = creds["user"]
+    sqlpassword = creds["password"]
+    sqldatabase = creds["database"]
+
+print(sqlhost)
+print(sqluser)
+print(sqlpassword)
+print(sqldatabase)
+
+#Connect to db
+mydb = mysql.connector.connect(host=sqlhost, user=sqluser, passwd=sqlpassword, database=sqldatabase)
+
+mycursor = mydb.cursor()
 
 #Flask app
 app = Flask(__name__)
@@ -42,7 +67,9 @@ def sms_reply():
 #Run the app on the public IP
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
+    mydb.close()
 
 #Subscribe to a specific app, adding it to the mysql db
-#def sub(number):
-    
+def sub(number):
+    #Setup query
+    query = ""
