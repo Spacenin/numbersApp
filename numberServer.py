@@ -56,6 +56,37 @@ def sub(number, app):
             print(number + " is already subscribed to service " + str(app))
 
             return(-1)
+
+#Unsubscribe from a specific app, subtracting from the user's app val in db
+def unsub(number, app):
+    #Check what is already there
+    selectQuery = "SELECT apps FROM numbers WHERE number=\'" + number + "\';"
+
+    #Get results
+    mycursor.execute(selectQuery)
+    results = mycursor.fetchall()
+
+    numAppVal = results[0][0] 
+
+    #If theyre not subbed tn anything, return error
+    if numAppVal == 0:
+        print(number + " is currently unsubscribed from everything")
+
+        return(-1)
+    else:
+        #If you can unsub, unsub
+        if numAppVal & app != 0:
+            updateQuery = "UPDATE numbers SET apps = " + str(numAppVal - app) + \
+                    " WHERE number = \"" + number + "\";"
+            mycursor.execute(updateQuery)
+            mydb.commit()
+
+            return(0)
+        #Otherwise, return error
+        else:
+            print(number + " is currently unsubscribed from service + " + str(app))
+
+            return(-1)
     
 #Flask app
 app = Flask(__name__)
@@ -74,24 +105,41 @@ def sms_reply():
     sender = sender.replace("+1", "")
 
     #If subscribe message
-    if re.search("subscribe", body, flags=re.IGNORECASE) != None:
+    if re.search("^subscribe?", body, flags=re.IGNORECASE) != None:
         resp.message("Which application would you like to subscribe to? Respond with:\n" + \
                     "1. \'bible\' - send daily Bible verses\n" + \
                     "2. \'recipe\' - send daily recipes from a selection of websites")
     #If they want to sub to bibleApp
-    elif re.search("bible", body, flags=re.IGNORECASE) != None:
+    elif re.search("^bible?", body, flags=re.IGNORECASE) != None:
         if sub(sender, 0b001) == 0:
             resp.message("You successfully subscribed to Bible! Hope you have a blessed day!")
         else:
             resp.message("Subscription failed.... are you already subscribed?")
     #If they want to sub to recipeApp
-    elif re.search("recipe", body, flags=re.IGNORECASE) != None:
+    elif re.search("^recipe?", body, flags=re.IGNORECASE) != None:
         if sub(sender, 0b010) == 0:
             resp.message("You successfully subscribed to recipe! Hope you enjoy!")
         else:
             resp.message("Subscription failed.... are you already subscribed?")
+    #If they ask to unsubscribe
+    elif re.search("^unsub?", body, flags=re.IGNORECASE) != None:
+        resp.message("Which application would you like to unsubscribe from? Respond with:\n" + \
+                    "1. \'unBible\'\n" + \
+                    "2. \'unRecipe\'")
+    #If they selected to unsub from bible
+    elif re.search("^unBible?", body, flags=re.IGNORECASE) != None:
+        if unsub(sender, 0b001) == 0:
+            resp.message("You successfully unsubscribed from Bible! :(")
+        else:
+            resp.message("Unsub failed... were you even subscribed?")
+    #If they selected to unsub from recipe
+    elif re.search("^unRecipe?", body, flags=re.IGNORECASE) != None:
+        if unsub(sender, 0b010) == 0:
+            resp.message("You successfully unsubscribed from recipe! :(")
+        else:
+            resp.message("Unsub failed... were you even subscribed?")
     #If help message
-    elif re.search("help me", body, flags=re.IGNORECASE) != None:
+    elif re.search("^help me?", body, flags=re.IGNORECASE) != None:
         resp.message("These are the available messages to send:\n" + \
                     "1. \'subscribe\' - subscribe to an application\n" + \
                     "2. \'unsub\' - unsubscribe from an application\n" + \
