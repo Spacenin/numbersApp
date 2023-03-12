@@ -38,7 +38,9 @@ def sub(number, app):
                 number + "\", " + str(app) + ");"
         
         mycursor.execute(insertQuery)
-        dbcursor.commit()
+        mydb.commit()
+
+        return(0)
     #Otherwise, update record
     else:
         #Check if already subscribed
@@ -47,9 +49,13 @@ def sub(number, app):
                 " WHERE number = \"" + number + "\";"
             mycursor.execute(updateQuery)
             mydb.commit()
+
+            return(0)
         #Otherwise, print nothing done
         else:
             print(number + " is already subscribed to service " + str(app))
+
+            return(-1)
     
 #Flask app
 app = Flask(__name__)
@@ -71,23 +77,28 @@ def sms_reply():
     if re.search("subscribe", body, flags=re.IGNORECASE) != None:
         resp.message("Which application would you like to subscribe to? Respond with:\n" + \
                     "1. \'bible\' - send daily Bible verses\n" + \
-                    "2. \'recipe\' - send daily recipes from a selection of websites\n" + \
-                    "3. \'weather\' - send daily weather updates")
+                    "2. \'recipe\' - send daily recipes from a selection of websites")
     #If they want to sub to bibleApp
     elif re.search("bible", body, flags=re.IGNORECASE) != None:
-        sub(sender, 0b001)
+        if sub(sender, 0b001) == 0:
+            resp.message("You successfully subscribed to Bible! Hope you have a blessed day!")
+        else:
+            resp.message("Subscription failed.... are you already subscribed?")
     #If they want to sub to recipeApp
     elif re.search("recipe", body, flags=re.IGNORECASE) != None:
-        sub(sender, 0b010)
-    #If they want to sub to weather
-    elif re.search("weather", body, flags=re.IGNORECASE) != None:
-        sub(sender, 0b100)
+        if sub(sender, 0b010) == 0:
+            resp.message("You successfully subscribed to recipe! Hope you enjoy!")
+        else:
+            resp.message("Subscription failed.... are you already subscribed?")
     #If help message
     elif re.search("help me", body, flags=re.IGNORECASE) != None:
         resp.message("These are the available messages to send:\n" + \
                     "1. \'subscribe\' - subscribe to an application\n" + \
                     "2. \'unsub\' - unsubscribe from an application\n" + \
                     "3. \'help me\' - view this message")
+    #If they say hello :)
+    elif re.search("hello", body, flags=re.IGNORECASE) != None:
+        resp.message("Hello! You can respond with the command \'help me\' to see what is available.")
     #Otherwise, give them an error msg
     else:
         resp.message("Invalid response! You may text \'help me\' to see available responses.")
