@@ -1,5 +1,6 @@
 from twilio.rest import Client
 import bible
+import recipe
 
 #Send a message to a number
 def sendMsg(content, number, secretData):
@@ -29,8 +30,9 @@ def sendAll(numbers, secretData):
             content.append(bible.runApp(secretData))
 
         #Recipe
-        #if apps & 2:
+        if apps & 2:
             #Run recipe
+            content.append(recipe.runApp(secretData))
 
         msg = "Good morning " + number[0] + "!\n\n"
 
@@ -38,7 +40,7 @@ def sendAll(numbers, secretData):
         for thingy in content:
             msg += thingy + "\n"
 
-        msg += "Have a good day!"
+        msg += "Have a wonderful good day!"
 
         #Send the message
         sendMsg(msg, number[0], secretData)
