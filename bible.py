@@ -66,6 +66,6 @@ def runApp(secretData):
     verse = getVerse(secretData["bible"]["api_key"])
 
     #Create verse as string
-    verseString = verse["title"] + "\n" + verse["text"] + "\n"
+    verseString = "Here is youur daily Bible verse: \n" + verse["title"] + "\n" + verse["text"] + "\n"
     
     return(verseString)
