@@ -11,7 +11,7 @@ sqlpassword = ""
 sqldatabase = ""
 
 #Get mysql creds
-with open("secrets.json", "r") as file:
+with open("/home/ubuntu/numberServer/secrets.json", "r") as file:
     creds = json.load(file)
     sqlhost = creds["host"]
     sqluser = creds["user"]
